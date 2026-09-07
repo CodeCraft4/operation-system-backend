@@ -12,8 +12,14 @@ describe('HealthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HealthService,
-        PrismaService,
-        SupabaseService,
+        {
+          provide: PrismaService,
+          useValue: { check: async () => 'skipped' },
+        },
+        {
+          provide: SupabaseService,
+          useValue: { check: async () => 'skipped' },
+        },
         InngestService,
       ],
     }).compile();
@@ -25,8 +31,8 @@ describe('HealthService', () => {
     expect(service.live()).toEqual({ status: 'ok' });
   });
 
-  it('returns skipped integrations until they are connected', () => {
-    expect(service.ready()).toEqual({
+  it('returns skipped integrations until they are connected', async () => {
+    await expect(service.ready()).resolves.toEqual({
       status: 'ready',
       checks: {
         app: 'ok',

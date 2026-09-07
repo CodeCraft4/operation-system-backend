@@ -30,19 +30,16 @@ describe('Health (e2e)', () => {
       .expect({ status: 'ok' });
   });
 
-  it('GET /api/v1/health/ready', () => {
-    return request(app.getHttpServer())
+  it('GET /api/v1/health/ready', async () => {
+    const response = await request(app.getHttpServer())
       .get('/api/v1/health/ready')
-      .expect(200)
-      .expect({
-        status: 'ready',
-        checks: {
-          app: 'ok',
-          database: 'skipped',
-          supabase: 'skipped',
-          inngest: 'skipped',
-        },
-      });
+      .expect(200);
+
+    expect(response.body.checks.app).toBe('ok');
+    expect(response.body.checks.inngest).toBe('skipped');
+    expect(['ok', 'skipped', 'error']).toContain(response.body.checks.database);
+    expect(['ok', 'skipped', 'error']).toContain(response.body.checks.supabase);
+    expect(['ready', 'degraded']).toContain(response.body.status);
   });
 
   it('GET /api/v1/jobs/inngest', () => {

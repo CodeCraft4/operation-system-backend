@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import type { IntegrationStatus } from '../prisma/prisma.service';
+import type { IntegrationStatus } from '../common/integration-status';
 
 @Injectable()
 export class InngestService {

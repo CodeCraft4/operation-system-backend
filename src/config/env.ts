@@ -18,6 +18,10 @@ export const envSchema = z.object({
   DIRECT_URL: z.preprocess(emptyToUndefined, z.string().optional()),
   SUPABASE_URL: z.preprocess(emptyToUndefined, z.string().optional()),
   SUPABASE_ANON_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  SUPABASE_PUBLISHABLE_KEY: z.preprocess(
+    emptyToUndefined,
+    z.string().optional(),
+  ),
   SUPABASE_SERVICE_ROLE_KEY: z.preprocess(
     emptyToUndefined,
     z.string().optional(),

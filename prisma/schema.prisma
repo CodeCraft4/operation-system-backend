@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// Models are added when Supabase Postgres is connected. Do not run migrate yet.
+// Models are added when we run the first migrate. Prisma only connects in this pass.
