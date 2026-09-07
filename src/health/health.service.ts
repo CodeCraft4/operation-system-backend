@@ -16,14 +16,21 @@ export class HealthService {
     return { status: 'ok' as const };
   }
 
-  ready() {
+  async ready() {
+    const [database, supabase] = await Promise.all([
+      this.prisma.check(),
+      this.supabase.check(),
+    ]);
+    const inngest = this.inngest.status;
+    const degraded = database === 'error' || supabase === 'error';
+
     return {
-      status: 'ready' as const,
+      status: degraded ? ('degraded' as const) : ('ready' as const),
       checks: {
         app: 'ok' as const,
-        database: this.prisma.status,
-        supabase: this.supabase.status,
-        inngest: this.inngest.status,
+        database,
+        supabase,
+        inngest,
       },
     };
   }

@@ -1,12 +1,17 @@
 # Operation System — Backend
 
-NestJS 11 API for the AI Marketing & Sales platform. Express adapter, TypeScript, Prisma, Supabase, and Inngest are in the repo. Postgres is not connected in this scaffold.
+NestJS 11 API for the AI Marketing & Sales platform. Express adapter, TypeScript, Prisma, Supabase, and Inngest.
 
 ## Setup
 
 ```bash
 npm install
-copy .env.example .env
+cp .env.example .env
+```
+
+Put the real database password into `DATABASE_URL` in `.env` (replace `YOUR_PASSWORD`). Then:
+
+```bash
 npm run start:dev
 ```
 
@@ -15,12 +20,8 @@ API listens on [http://localhost:4000](http://localhost:4000). Next.js stays on 
 ## Health
 
 - `GET /api/v1/health` → `{ "status": "ok" }`
-- `GET /api/v1/health/ready` → app ready; `database`, `supabase`, and `inngest` are `skipped` until connected
-- `GET /api/v1/jobs/inngest` → Inngest placeholder; no events are sent
-
-## Environment
-
-See `.env.example`. `DATABASE_URL`, Supabase, and Inngest keys are optional. The API boots without them.
+- `GET /api/v1/health/ready` → `database` and `supabase` are `ok` when credentials work; `inngest` stays `skipped`
+- `GET /api/v1/jobs/inngest` → placeholder; no events are sent
 
 ## Scripts
 
@@ -30,8 +31,9 @@ npm run build
 npm run lint
 npm run test
 npm run test:e2e
+npm run prisma:generate
 ```
 
 ## Next
 
-Connect Supabase Postgres, run Prisma migrate, wire Auth/Storage, and register Inngest functions. Do not add provider adapters in this pass.
+Run the first Prisma migrate when `DIRECT_URL` is available. Then wire Auth, Storage, and Inngest functions.
