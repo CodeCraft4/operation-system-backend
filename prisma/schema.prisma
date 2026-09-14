@@ -6,4 +6,110 @@ datasource db {
   provider = "postgresql"
 }
 
-// Models are added when we run the first migrate. Prisma only connects in this pass.
+enum MembershipRole {
+  admin
+  operator
+  reviewer
+}
+
+enum ContentJobStatus {
+  requested
+  running
+  succeeded
+  failed
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  memberships     Membership[]
+  brandBrief      BrandBrief?
+  contentRequests ContentRequest[]
+  contentDrafts   ContentDraft[]
+
+  @@map("workspaces")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  supabaseAuthId String?  @unique @map("supabase_auth_id")
+  name           String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  memberships Membership[]
+
+  @@map("users")
+}
+
+model Membership {
+  id          String         @id @default(cuid())
+  workspaceId String         @map("workspace_id")
+  userId      String         @map("user_id")
+  role        MembershipRole
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model BrandBrief {
+  id               String   @id @default(cuid())
+  workspaceId      String   @unique @map("workspace_id")
+  name             String
+  tone             String?
+  approvedFacts    String?  @map("approved_facts") @db.Text
+  prohibitedClaims String?  @map("prohibited_claims") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentRequests ContentRequest[]
+
+  @@map("brand_briefs")
+}
+
+model ContentRequest {
+  id           String           @id @default(cuid())
+  workspaceId  String           @map("workspace_id")
+  brandBriefId String?          @map("brand_brief_id")
+  status       ContentJobStatus @default(requested)
+  prompt       String?          @db.Text
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  workspace  Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brandBrief BrandBrief?    @relation(fields: [brandBriefId], references: [id], onDelete: SetNull)
+  drafts     ContentDraft[]
+
+  @@index([workspaceId])
+  @@index([brandBriefId])
+  @@map("content_requests")
+}
+
+model ContentDraft {
+  id               String   @id @default(cuid())
+  workspaceId      String   @map("workspace_id")
+  contentRequestId String   @map("content_request_id")
+  title            String?
+  body             String   @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentRequest ContentRequest @relation(fields: [contentRequestId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([contentRequestId])
+  @@map("content_drafts")
+}
