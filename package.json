@@ -18,7 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node --experimental-require-module ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:apply": "node scripts/apply-init-migration.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -30,6 +33,7 @@
     "@supabase/supabase-js": "^2.114.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "dotenv": "^17.4.2",
     "inngest": "^4.18.1",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
