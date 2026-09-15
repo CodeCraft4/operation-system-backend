@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
@@ -7,6 +8,10 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import type { AuthContext } from './auth-context';
+import {
+  isSupabaseSocialAuthProvider,
+  type SupabaseSocialAuthProvider,
+} from './social-auth.providers';
 
 @Injectable()
 export class IdentityService {
@@ -67,13 +72,71 @@ export class IdentityService {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
+    return this.toSessionResponse(
+      session.access_token,
+      session.expires_in,
+      session.user.email,
+      session.user.id,
+    );
+  }
+
+  async startSocialOAuth(providerName: string) {
+    if (!isSupabaseSocialAuthProvider(providerName)) {
+      throw new BadRequestException(
+        'Unsupported social provider. Use google or facebook.',
+      );
+    }
+
+    const provider: SupabaseSocialAuthProvider = providerName;
+    const { url, redirectTo } =
+      await this.supabase.getOAuthSignInUrl(provider);
+
     return {
-      accessToken: session.access_token,
-      tokenType: 'Bearer',
-      expiresIn: session.expires_in,
+      provider,
+      url,
+      redirectTo,
+    };
+  }
+
+  /**
+   * After the frontend finishes the Supabase OAuth redirect and has an access token,
+   * exchange it for the API session payload (same shape as password login).
+   */
+  async completeSocialLogin(accessToken: string) {
+    const supabaseUser =
+      await this.supabase.getUserFromAccessToken(accessToken);
+    if (!supabaseUser?.email) {
+      throw new UnauthorizedException('Invalid or expired access token.');
+    }
+
+    // Ensure the Supabase identity is linked to a workspace-backed app user.
+    await this.findOrLinkUser(supabaseUser.id, supabaseUser.email);
+
+    return this.toSessionResponse(
+      accessToken,
+      null,
+      supabaseUser.email,
+      supabaseUser.id,
+    );
+  }
+
+  getSocialAuthHealth() {
+    return this.supabase.checkSocialAuth();
+  }
+
+  private toSessionResponse(
+    accessToken: string,
+    expiresIn: number | null,
+    email: string,
+    supabaseAuthId: string,
+  ) {
+    return {
+      accessToken,
+      tokenType: 'Bearer' as const,
+      expiresIn,
       user: {
-        email: session.user.email,
-        supabaseAuthId: session.user.id,
+        email,
+        supabaseAuthId,
       },
     };
   }

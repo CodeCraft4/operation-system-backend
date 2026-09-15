@@ -19,6 +19,27 @@ enum ContentJobStatus {
   failed
 }
 
+enum ProviderConnectionKind {
+  social
+  google_ads
+  meta_ads
+}
+
+enum ProviderConnectionStatus {
+  pending
+  connected
+  disconnected
+  expired
+  error
+}
+
+enum SocialAccountType {
+  facebook
+  instagram
+  linkedin
+  x
+}
+
 model Workspace {
   id        String   @id @default(cuid())
   name      String
@@ -26,6 +47,11 @@ model Workspace {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  memberships         Membership[]
+  brandBrief          BrandBrief?
+  contentRequests     ContentRequest[]
+  contentDrafts       ContentDraft[]
+  providerConnections ProviderConnection[]
   memberships     Membership[]
   brandBrief      BrandBrief?
   contentRequests ContentRequest[]
@@ -151,4 +177,48 @@ model ContentDraft {
 
   @@index([workspaceId])
   @@map("content_drafts")
+}
+
+/// Workspace-scoped external provider connection (social or ads).
+model ProviderConnection {
+  id                 String                   @id @default(cuid())
+  workspaceId        String                   @map("workspace_id")
+  kind               ProviderConnectionKind
+  /// Stable key: facebook|instagram|linkedin|x|google_ads|meta_ads
+  externalKey        String                   @map("external_key")
+  accountType        SocialAccountType?       @map("account_type")
+  status             ProviderConnectionStatus @default(pending)
+  externalAccountId  String?                  @map("external_account_id")
+  scopes             String[]                 @default([])
+  displayName        String?                  @map("display_name")
+  canReadAds         Boolean?                 @map("can_read_ads")
+  missingPermissions String[]                 @default([]) @map("missing_permissions")
+  lastHealthAt       DateTime?                @map("last_health_at")
+  lastHealthMessage  String?                  @map("last_health_message") @db.Text
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  updatedAt          DateTime                 @updatedAt @map("updated_at")
+
+  workspace  Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  credential ProviderCredential?
+
+  @@unique([workspaceId, externalKey])
+  @@index([workspaceId])
+  @@index([kind])
+  @@index([status])
+  @@map("provider_connections")
+}
+
+/// Encrypted OAuth tokens — never returned by API responses.
+model ProviderCredential {
+  id              String    @id @default(cuid())
+  connectionId    String    @unique @map("connection_id")
+  accessTokenEnc  String    @map("access_token_enc") @db.Text
+  refreshTokenEnc String?   @map("refresh_token_enc") @db.Text
+  tokenExpiresAt  DateTime? @map("token_expires_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  connection ProviderConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@map("provider_credentials")
 }

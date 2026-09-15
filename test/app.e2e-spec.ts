@@ -39,6 +39,9 @@ describe('Health (e2e)', () => {
     expect(response.body.checks.inngest).toBe('skipped');
     expect(['ok', 'skipped', 'error']).toContain(response.body.checks.database);
     expect(['ok', 'skipped', 'error']).toContain(response.body.checks.supabase);
+    expect(['ok', 'skipped', 'error']).toContain(response.body.checks.deepseek);
+    expect(['ok', 'skipped', 'error']).toContain(response.body.checks.retell);
+    expect(['ok', 'skipped', 'error']).toContain(response.body.checks.email);
     expect(['ready', 'degraded']).toContain(response.body.status);
   });
 

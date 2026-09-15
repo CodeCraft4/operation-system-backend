@@ -1,4 +1,8 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -19,6 +23,8 @@ describe('IdentityService', () => {
   const supabase = {
     getUserFromAccessToken: jest.fn(),
     signInWithPassword: jest.fn(),
+    getOAuthSignInUrl: jest.fn(),
+    checkSocialAuth: jest.fn(),
   };
   const service = new IdentityService(
     prisma as unknown as PrismaService,
@@ -145,5 +151,71 @@ describe('IdentityService', () => {
     await expect(service.login(user.email, 'wrong')).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it('starts Google OAuth and returns a redirect URL', async () => {
+    supabase.getOAuthSignInUrl.mockResolvedValue({
+      url: 'https://accounts.google.com/o/oauth2/v2/auth?...',
+      redirectTo: 'http://localhost:3000/auth/callback',
+    });
+
+    await expect(service.startSocialOAuth('google')).resolves.toEqual({
+      provider: 'google',
+      url: 'https://accounts.google.com/o/oauth2/v2/auth?...',
+      redirectTo: 'http://localhost:3000/auth/callback',
+    });
+  });
+
+  it('starts Facebook OAuth and returns a redirect URL', async () => {
+    supabase.getOAuthSignInUrl.mockResolvedValue({
+      url: 'https://www.facebook.com/v18.0/dialog/oauth?...',
+      redirectTo: 'http://localhost:3000/auth/callback',
+    });
+
+    await expect(service.startSocialOAuth('facebook')).resolves.toEqual({
+      provider: 'facebook',
+      url: 'https://www.facebook.com/v18.0/dialog/oauth?...',
+      redirectTo: 'http://localhost:3000/auth/callback',
+    });
+  });
+
+  it('rejects unsupported social providers', async () => {
+    await expect(service.startSocialOAuth('linkedin')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
+  it('completes social login with an access token for a linked user', async () => {
+    supabase.getUserFromAccessToken.mockResolvedValue({
+      id: 'sb-1',
+      email: user.email,
+    });
+    prisma.db.user.findUnique.mockResolvedValue(linkedUser);
+
+    await expect(
+      service.completeSocialLogin('supabase-access-token-value'),
+    ).resolves.toEqual({
+      accessToken: 'supabase-access-token-value',
+      tokenType: 'Bearer',
+      expiresIn: null,
+      user: {
+        email: user.email,
+        supabaseAuthId: 'sb-1',
+      },
+    });
+  });
+
+  it('returns social auth health from supabase', () => {
+    supabase.checkSocialAuth.mockReturnValue({
+      status: 'ok',
+      redirectUrl: 'http://localhost:3000/auth/callback',
+      providers: { google: 'ok', facebook: 'ok' },
+    });
+
+    expect(service.getSocialAuthHealth()).toEqual({
+      status: 'ok',
+      redirectUrl: 'http://localhost:3000/auth/callback',
+      providers: { google: 'ok', facebook: 'ok' },
+    });
   });
 });

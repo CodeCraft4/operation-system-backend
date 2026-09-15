@@ -1,7 +1,15 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+} from '@nestjs/common';
 
 import { CurrentAuth } from './current-auth.decorator';
 import { LoginDto } from './dto/login.dto';
+import { SocialOAuthCallbackDto } from './dto/social-oauth-callback.dto';
 import type { AuthContext } from './auth-context';
 import { IdentityService } from './identity.service';
 import { Public } from './public.decorator';
@@ -15,6 +23,25 @@ export class IdentityController {
   @HttpCode(200)
   login(@Body() body: LoginDto) {
     return this.identity.login(body.email, body.password);
+  }
+
+  @Public()
+  @Get('auth/oauth/health')
+  socialAuthHealth() {
+    return this.identity.getSocialAuthHealth();
+  }
+
+  @Public()
+  @Get('auth/oauth/:provider')
+  startSocialOAuth(@Param('provider') provider: string) {
+    return this.identity.startSocialOAuth(provider);
+  }
+
+  @Public()
+  @Post('auth/oauth/callback')
+  @HttpCode(200)
+  completeSocialOAuth(@Body() body: SocialOAuthCallbackDto) {
+    return this.identity.completeSocialLogin(body.accessToken);
   }
 
   @Get('me')

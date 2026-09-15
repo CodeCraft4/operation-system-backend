@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
 
-@Module({})
+import { SocialController } from './social.controller';
+
+@Module({
+  controllers: [SocialController],
+})
 export class SocialModule {}
