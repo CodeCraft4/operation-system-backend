@@ -51,12 +51,8 @@ model Workspace {
   brandBrief          BrandBrief?
   contentRequests     ContentRequest[]
   contentDrafts       ContentDraft[]
+  generationJobs      GenerationJob[]
   providerConnections ProviderConnection[]
-  memberships     Membership[]
-  brandBrief      BrandBrief?
-  contentRequests ContentRequest[]
-  contentDrafts   ContentDraft[]
-  generationJobs  GenerationJob[]
 
   @@map("workspaces")
 }
@@ -171,9 +167,9 @@ model ContentDraft {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  contentRequest ContentRequest  @relation(fields: [contentRequestId], references: [id], onDelete: Cascade)
-  generationJob  GenerationJob?  @relation(fields: [generationJobId], references: [id], onDelete: SetNull)
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentRequest ContentRequest @relation(fields: [contentRequestId], references: [id], onDelete: Cascade)
+  generationJob  GenerationJob? @relation(fields: [generationJobId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@map("content_drafts")
