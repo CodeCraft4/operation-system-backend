@@ -28,6 +28,20 @@ export const envSchema = z.object({
   ),
   INNGEST_EVENT_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
   INNGEST_SIGNING_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  CONTENT_GENERATION_PROVIDER: z.preprocess(
+    emptyToUndefined,
+    z.enum(['stub', 'deepseek']).optional(),
+  ),
+  DEEPSEEK_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  DEEPSEEK_BASE_URL: z.preprocess(emptyToUndefined, z.string().optional()),
+  DEEPSEEK_MODEL: z.preprocess(emptyToUndefined, z.string().optional()),
+  DEEPSEEK_TIMEOUT_MS: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    if (normalized === undefined) {
+      return undefined;
+    }
+    return Number(normalized);
+  }, z.number().int().positive().optional()),
 });
 
 export type Env = z.infer<typeof envSchema>;
