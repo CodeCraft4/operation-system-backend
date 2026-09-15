@@ -38,8 +38,9 @@ model User {
   id             String   @id @default(cuid())
   email          String   @unique
   supabaseAuthId String?  @unique @map("supabase_auth_id")
-  name           String?
-  createdAt      DateTime @default(now()) @map("created_at")
+  name               String?
+  currentWorkspaceId String?  @map("current_workspace_id")
+  createdAt          DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   memberships Membership[]

@@ -36,8 +36,9 @@ export class IdentityService {
       throw new ForbiddenException('You do not belong to a workspace.');
     }
 
-    const membership = workspaceId
-      ? memberships.find((item) => item.workspaceId === workspaceId)
+    const targetWorkspaceId = workspaceId ?? user.currentWorkspaceId;
+    const membership = targetWorkspaceId
+      ? memberships.find((item) => item.workspaceId === targetWorkspaceId)
       : memberships[0];
 
     if (!membership) {
