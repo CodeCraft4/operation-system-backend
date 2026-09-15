@@ -18,6 +18,7 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
+    seed: 'node prisma/seed.cjs',
   },
   datasource: {
     // Migrate uses DIRECT_URL (port 5432). The Nest API still uses pooled DATABASE_URL.

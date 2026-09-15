@@ -21,7 +21,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:migrate:apply": "node scripts/apply-init-migration.cjs"
+    "prisma:migrate:apply": "node scripts/apply-init-migration.cjs",
+    "prisma:seed": "node prisma/seed.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
