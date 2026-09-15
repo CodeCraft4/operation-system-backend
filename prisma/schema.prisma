@@ -52,20 +52,26 @@ model Workspace {
   contentRequests     ContentRequest[]
   contentDrafts       ContentDraft[]
   providerConnections ProviderConnection[]
+  memberships     Membership[]
+  brandBrief      BrandBrief?
+  contentRequests ContentRequest[]
+  contentDrafts   ContentDraft[]
+  generationJobs  GenerationJob[]
 
   @@map("workspaces")
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  supabaseAuthId String?  @unique @map("supabase_auth_id")
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  supabaseAuthId     String?  @unique @map("supabase_auth_id")
   name               String?
   currentWorkspaceId String?  @map("current_workspace_id")
   createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
-  memberships Membership[]
+  memberships     Membership[]
+  contentRequests ContentRequest[]
 
   @@map("users")
 }
@@ -103,37 +109,73 @@ model BrandBrief {
 }
 
 model ContentRequest {
-  id           String           @id @default(cuid())
-  workspaceId  String           @map("workspace_id")
-  brandBriefId String?          @map("brand_brief_id")
-  status       ContentJobStatus @default(requested)
-  prompt       String?          @db.Text
-  createdAt    DateTime         @default(now()) @map("created_at")
-  updatedAt    DateTime         @updatedAt @map("updated_at")
+  id              String           @id @default(cuid())
+  workspaceId     String           @map("workspace_id")
+  createdByUserId String?          @map("created_by_user_id")
+  brandBriefId    String?          @map("brand_brief_id")
+  status          ContentJobStatus @default(requested)
+  prompt          String?          @db.Text
+  input           Json?
+  idempotencyKey  String?          @map("idempotency_key")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
 
-  workspace  Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  brandBrief BrandBrief?    @relation(fields: [brandBriefId], references: [id], onDelete: SetNull)
-  drafts     ContentDraft[]
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdByUser  User?           @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  brandBrief     BrandBrief?     @relation(fields: [brandBriefId], references: [id], onDelete: SetNull)
+  generationJobs GenerationJob[]
+  drafts         ContentDraft[]
 
+  @@unique([workspaceId, idempotencyKey])
   @@index([workspaceId])
   @@index([brandBriefId])
+  @@index([createdByUserId])
   @@map("content_requests")
+}
+
+model GenerationJob {
+  id               String           @id @default(cuid())
+  workspaceId      String           @map("workspace_id")
+  contentRequestId String           @unique @map("content_request_id")
+  status           ContentJobStatus @default(requested)
+  provider         String
+  promptVersion    String           @map("prompt_version")
+  errorCode        String?          @map("error_code")
+  errorMessage     String?          @map("error_message") @db.Text
+  startedAt        DateTime?        @map("started_at")
+  completedAt      DateTime?        @map("completed_at")
+  usageMetadata    Json?            @map("usage_metadata")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentRequest ContentRequest @relation(fields: [contentRequestId], references: [id], onDelete: Cascade)
+  draft          ContentDraft?
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("generation_jobs")
 }
 
 model ContentDraft {
   id               String   @id @default(cuid())
   workspaceId      String   @map("workspace_id")
-  contentRequestId String   @map("content_request_id")
+  contentRequestId String   @unique @map("content_request_id")
+  generationJobId  String?  @unique @map("generation_job_id")
   title            String?
   body             String   @db.Text
+  version          Int      @default(1)
+  provider         String?
+  promptVersion    String?  @map("prompt_version")
+  metadata         Json?
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  contentRequest ContentRequest @relation(fields: [contentRequestId], references: [id], onDelete: Cascade)
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentRequest ContentRequest  @relation(fields: [contentRequestId], references: [id], onDelete: Cascade)
+  generationJob  GenerationJob?  @relation(fields: [generationJobId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
-  @@index([contentRequestId])
   @@map("content_drafts")
 }
 
