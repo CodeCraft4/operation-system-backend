@@ -16,6 +16,7 @@ import {
   type IntegrationStatus,
 } from '../common/integration-status';
 import type { Env } from '../config/env';
+import type { SupabaseSocialAuthProvider } from '../identity/social-auth.providers';
 
 @Injectable()
 export class SupabaseService {
@@ -24,6 +25,7 @@ export class SupabaseService {
   private readonly authClient: SupabaseClient | null = null;
   private readonly supabaseUrl?: string;
   private readonly supabaseKey?: string;
+  private readonly oauthRedirectUrl: string;
 
   constructor(private readonly config: ConfigService<Env, true>) {
     this.supabaseUrl = this.config.get('SUPABASE_URL', { infer: true });
@@ -36,6 +38,11 @@ export class SupabaseService {
       this.config.get('SUPABASE_ANON_KEY', { infer: true }) ??
       this.config.get('SUPABASE_PUBLISHABLE_KEY', { infer: true }) ??
       this.supabaseKey;
+
+    const frontendOrigin = this.config.get('FRONTEND_ORIGIN', { infer: true });
+    this.oauthRedirectUrl =
+      this.config.get('SUPABASE_OAUTH_REDIRECT_URL', { infer: true }) ??
+      `${frontendOrigin.replace(/\/$/, '')}/auth/callback`;
 
     if (isUsableSecret(this.supabaseUrl) && isUsableSecret(this.supabaseKey)) {
       this.client = createClient(this.supabaseUrl, this.supabaseKey, {
@@ -71,6 +78,57 @@ export class SupabaseService {
     } catch {
       return 'error';
     }
+  }
+
+  /**
+   * Soft readiness for Google/Facebook OAuth start.
+   * Providers must also be enabled in the Supabase Auth dashboard.
+   */
+  checkSocialAuth(): {
+    status: IntegrationStatus;
+    redirectUrl: string;
+    providers: Record<SupabaseSocialAuthProvider, IntegrationStatus>;
+  } {
+    if (!this.authClient) {
+      return {
+        status: 'skipped',
+        redirectUrl: this.oauthRedirectUrl,
+        providers: { google: 'skipped', facebook: 'skipped' },
+      };
+    }
+
+    return {
+      status: 'ok',
+      redirectUrl: this.oauthRedirectUrl,
+      providers: { google: 'ok', facebook: 'ok' },
+    };
+  }
+
+  async getOAuthSignInUrl(
+    provider: SupabaseSocialAuthProvider,
+    redirectTo = this.oauthRedirectUrl,
+  ): Promise<{ url: string; redirectTo: string }> {
+    if (!this.authClient) {
+      throw new ServiceUnavailableException(
+        'Supabase Auth is not configured yet.',
+      );
+    }
+
+    const { data, error } = await this.authClient.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+      },
+    });
+
+    if (error || !data.url) {
+      throw new ServiceUnavailableException(
+        `Unable to start ${provider} sign-in. Enable the provider in Supabase Auth.`,
+      );
+    }
+
+    return { url: data.url, redirectTo };
   }
 
   async getUserFromAccessToken(

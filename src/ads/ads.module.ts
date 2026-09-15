@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
 
-@Module({})
+import { AdsController } from './ads.controller';
+
+@Module({
+  controllers: [AdsController],
+})
 export class AdsModule {}

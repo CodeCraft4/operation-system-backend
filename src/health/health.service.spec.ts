@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { InngestService } from '../inngest/inngest.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { DeepSeekAiProvider } from '../providers/deepseek/deepseek-ai.provider';
+import { RetellVoiceProvider } from '../providers/retell/retell-voice.provider';
+import { SmtpEmailProvider } from '../providers/smtp/smtp-email.provider';
 import { SupabaseService } from '../supabase/supabase.service';
 import { HealthService } from './health.service';
 
@@ -21,6 +24,18 @@ describe('HealthService', () => {
           useValue: { check: async () => 'skipped' },
         },
         InngestService,
+        {
+          provide: DeepSeekAiProvider,
+          useValue: { check: async () => 'skipped' },
+        },
+        {
+          provide: RetellVoiceProvider,
+          useValue: { check: async () => 'skipped' },
+        },
+        {
+          provide: SmtpEmailProvider,
+          useValue: { check: async () => 'skipped' },
+        },
       ],
     }).compile();
 
@@ -39,6 +54,9 @@ describe('HealthService', () => {
         database: 'skipped',
         supabase: 'skipped',
         inngest: 'skipped',
+        deepseek: 'skipped',
+        retell: 'skipped',
+        email: 'skipped',
       },
     });
   });

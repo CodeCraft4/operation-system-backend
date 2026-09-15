@@ -11,6 +11,7 @@ import { InngestModule } from './inngest/inngest.module';
 import { JobsModule } from './jobs/jobs.module';
 import { MediaModule } from './media/media.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProvidersModule } from './providers/providers.module';
 import { SocialModule } from './social/social.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { VoiceModule } from './voice/voice.module';
@@ -25,6 +26,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     }),
     PrismaModule,
     SupabaseModule,
+    ProvidersModule,
     InngestModule,
     HealthModule,
     IdentityModule,
